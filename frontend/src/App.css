@@ -1,5 +1,6 @@
 .App {
   min-height: 100vh;
+  background: #f9fafb;
 }
 
 /* Custom scrollbar for chat */
@@ -8,16 +9,16 @@
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: #f3f4f6;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #d1d5db;
   border-radius: 3px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #4b5563;
+  background: #9ca3af;
 }
 
 /* Smooth transitions */
@@ -31,12 +32,37 @@ tbody tr {
 }
 
 /* Card hover effects */
-.hover\:bg-gray-800\/50:hover {
-  background-color: rgb(31 41 55 / 0.5);
+.hover\:bg-gray-50:hover {
+  background-color: rgb(249 250 251);
 }
 
 /* Button focus styles */
 button:focus-visible {
-  outline: 2px solid rgb(20 184 166);
+  outline: 2px solid rgb(37 99 235);
   outline-offset: 2px;
+}
+
+/* Light theme specific adjustments */
+.bg-card {
+  background-color: #ffffff;
+}
+
+.border-light {
+  border-color: #e5e7eb;
+}
+
+/* Status indicator colors for light theme */
+.status-success {
+  color: rgb(16 185 129);
+  background-color: rgb(220 252 231);
+}
+
+.status-failed {
+  color: rgb(239 68 68);
+  background-color: rgb(254 242 242);
+}
+
+.status-pending {
+  color: rgb(245 158 11);
+  background-color: rgb(255 251 235);
 }
