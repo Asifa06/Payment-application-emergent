@@ -76,17 +76,17 @@ Response: { success: boolean, transaction?: object, message?: string }
 
 ## Sample Test Users
 ```
+Admin User:
 Email: admin@payinsight.com
 Password: admin123
 Name: Admin User
+Role: admin
 
-Email: demo@payinsight.com  
-Password: demo123
-Name: Demo User
-
+Payment Analyst:
 Email: analyst@payinsight.com
 Password: analyst123
 Name: Payment Analyst
+Role: analyst
 ```
 
 ## Frontend Components to Update
