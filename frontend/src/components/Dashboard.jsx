@@ -274,18 +274,30 @@ const Dashboard = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="bg-white border border-gray-200 mb-6">
-                <TabsTrigger value="transactions" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <TabsList className="bg-gray-100 border border-gray-200 mb-6 p-1 rounded-lg">
+                <TabsTrigger 
+                  value="transactions" 
+                  className="text-gray-700 font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-4 py-2 rounded-md transition-all duration-200"
+                >
                   Recent Transactions
                 </TabsTrigger>
-                <TabsTrigger value="create" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="create" 
+                  className="text-gray-700 font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-4 py-2 rounded-md transition-all duration-200"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Create Transaction
                 </TabsTrigger>
-                <TabsTrigger value="alerts" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="alerts" 
+                  className="text-gray-700 font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-4 py-2 rounded-md transition-all duration-200"
+                >
                   System Alerts
                 </TabsTrigger>
-                <TabsTrigger value="simulator" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+                <TabsTrigger 
+                  value="simulator" 
+                  className="text-gray-700 font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm px-4 py-2 rounded-md transition-all duration-200"
+                >
                   Scenario Simulator
                 </TabsTrigger>
               </TabsList>
