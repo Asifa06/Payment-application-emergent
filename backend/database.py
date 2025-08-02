@@ -8,7 +8,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # MongoDB connection
-mongo_url = os.environ.get('MONGO_URL')
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 if not mongo_url:
     raise ValueError("MONGO_URL environment variable is not set")
 
