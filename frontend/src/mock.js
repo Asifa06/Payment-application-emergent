@@ -1,5 +1,23 @@
 // Mock data for PayInsight Dashboard
 
+// Validation functions
+export const validateIFSC = (ifsc) => {
+  // Simple IFSC validation - 11 characters, first 4 letters, 5th is 0, last 6 alphanumeric
+  const ifscPattern = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+  return ifscPattern.test(ifsc);
+};
+
+export const generateTransactionId = () => {
+  return `TXN${Date.now()}${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+};
+
+export const blockedAccounts = [
+  "BLOCKED_SENDER",
+  "FRAUD_ACCOUNT", 
+  "SUSPENDED_USER",
+  "AML_FLAGGED"
+];
+
 export const mockTransactions = [
   {
     id: "TXN001234567",
