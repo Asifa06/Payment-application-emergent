@@ -165,6 +165,14 @@ export const mockAlerts = [
 ];
 
 export const mockAIResponses = {
+  "transaction_created": (txnData) => ({
+    response: `**New Transaction Initiated**\n\n**Transaction Details:**\n• ID: ${txnData.id}\n• Channel: ${txnData.channel}\n• Amount: ₹${txnData.amount.toLocaleString()}\n\n**Processing Flow:**\n${getProcessingSteps(txnData.channel)}\n\n**Expected Timeline:** ${getExpectedTimeline(txnData.channel)}`,
+    suggestions: ["Monitor transaction status", "Check compliance alerts", "Review processing timeline"]
+  }),
+  "transaction_failed": (reason, txnData) => ({
+    response: `**Transaction Failed - Analysis**\n\n**Failure Reason:** ${reason}\n\n**Root Cause Analysis:**\n${getFailureAnalysis(reason)}\n\n**Recommended Actions:**\n${getRemedialActions(reason)}\n\n**Prevention:** ${getPreventionTips(reason)}`,
+    suggestions: ["Retry with corrections", "Contact compliance team", "Update beneficiary details"]
+  }),
   "why did this transaction fail": {
     response: "Based on the transaction details, the most common failure reasons in GPP are:\n\n1. **Insufficient Funds** - Account balance lower than transaction amount\n2. **Invalid IFSC Code** - Incorrect or inactive bank routing code\n3. **Transaction Limit Exceeded** - Amount exceeds daily/per-transaction limits\n4. **Network Timeout** - Communication failure between banks\n5. **Account Frozen** - Regulatory or compliance hold on account\n\nFor the specific transaction you're referencing, I can provide detailed analysis if you share the transaction ID.",
     suggestions: ["Check account balance", "Verify IFSC code", "Review transaction limits"]
