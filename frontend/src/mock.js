@@ -164,6 +164,58 @@ export const mockAlerts = [
   }
 ];
 
+// Helper functions for AI responses
+const getProcessingSteps = (channel) => {
+  const steps = {
+    IMPS: "1. Real-time validation\n2. NPCI network routing\n3. Instant settlement\n4. Confirmation to both parties",
+    NEFT: "1. Batch queue entry\n2. Hourly processing cycle\n3. Inter-bank settlement\n4. Credit confirmation",
+    RTGS: "1. High-value validation\n2. Real-time gross settlement\n3. RBI network processing\n4. Immediate fund transfer"
+  };
+  return steps[channel] || "Standard processing flow";
+};
+
+const getExpectedTimeline = (channel) => {
+  const timelines = {
+    IMPS: "2-3 seconds",
+    NEFT: "30-60 minutes",
+    RTGS: "5-10 minutes"
+  };
+  return timelines[channel] || "Variable";
+};
+
+const getFailureAnalysis = (reason) => {
+  const analysis = {
+    "Invalid IFSC code": "The beneficiary bank routing code is either incorrect, inactive, or doesn't exist in the RBI database. This prevents proper routing of the transaction.",
+    "Insufficient funds": "The sender's account balance is lower than the transaction amount plus applicable charges. The bank's validation systems prevent overdrafts.",
+    "Account blocked": "The sender or receiver account has been flagged and blocked due to regulatory compliance, suspicious activity, or customer request.",
+    "AML compliance hold": "The transaction triggered Anti-Money Laundering rules due to high amount, suspicious patterns, or blacklisted entities. Manual review required.",
+    "Transaction limit exceeded": "The amount exceeds the daily/per-transaction limits set by RBI or the bank for the specific channel and customer category."
+  };
+  return analysis[reason] || "System validation failed during processing.";
+};
+
+const getRemedialActions = (reason) => {
+  const actions = {
+    "Invalid IFSC code": "• Verify correct IFSC from beneficiary bank\n• Use RBI IFSC lookup tool\n• Contact beneficiary for confirmation",
+    "Insufficient funds": "• Check account balance\n• Add sufficient funds before retry\n• Consider partial payment if allowed",
+    "Account blocked": "• Contact bank branch immediately\n• Provide required documentation\n• Follow compliance procedures",
+    "AML compliance hold": "• Wait for manual review completion\n• Provide transaction justification\n• Submit supporting documents",
+    "Transaction limit exceeded": "• Split into multiple smaller transactions\n• Request limit enhancement\n• Use alternative payment channel"
+  };
+  return actions[reason] || "Contact technical support for assistance.";
+};
+
+const getPreventionTips = (reason) => {
+  const tips = {
+    "Invalid IFSC code": "Always verify IFSC codes using official RBI database before transaction submission.",
+    "Insufficient funds": "Enable account balance alerts and maintain adequate buffer for charges.",
+    "Account blocked": "Regularly update KYC documents and avoid suspicious transaction patterns.",
+    "AML compliance hold": "Structure large transactions properly and maintain clear business justification.",
+    "Transaction limit exceeded": "Monitor daily limits and plan high-value transactions in advance."
+  };
+  return tips[reason] || "Follow standard banking practices and compliance guidelines.";
+};
+
 export const mockAIResponses = {
   "transaction_created": (txnData) => ({
     response: `**New Transaction Initiated**\n\n**Transaction Details:**\n• ID: ${txnData.id}\n• Channel: ${txnData.channel}\n• Amount: ₹${txnData.amount.toLocaleString()}\n\n**Processing Flow:**\n${getProcessingSteps(txnData.channel)}\n\n**Expected Timeline:** ${getExpectedTimeline(txnData.channel)}`,
