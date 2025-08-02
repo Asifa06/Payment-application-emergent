@@ -1,4 +1,5 @@
 **Payment Application Emergent – Smart Payment Intelligence Dashboard**
+
 A full-stack portfolio project featuring a smart payment intelligence dashboard built with AI agent (Emergent). It showcases advanced payment analytics, user authentication, and a modern UI, providing secure, compliant, and insightful payment management.
 
 🚀** Overview**
