@@ -4,10 +4,12 @@
 Full-stack PayInsight application with authentication, transaction management, and AI assistance.
 
 ## Theme: Light Mode
-- **Primary Colors**: White backgrounds (#ffffff), light gray (#f8fafc, #f1f5f9)
-- **Accent Color**: Soft teal (#0891b2)
-- **Text**: Dark gray (#1e293b, #475569)
-- **Borders**: Light gray (#e2e8f0)
+- **Background**: #f9fafb (light gray background)
+- **Primary Accent**: #2563eb (professional blue)
+- **Secondary Accent**: #0891b2 (teal)
+- **Text Color**: #111827 (dark gray)
+- **Card Backgrounds**: #ffffff (white)
+- **Borders**: #e5e7eb (light borders)
 
 ## Authentication Flow
 1. User lands on login page
