@@ -16,16 +16,20 @@ import {
   Filter,
   Activity,
   Shield,
-  DollarSign
+  DollarSign,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { mockTransactions, mockAlerts, mockAIResponses, scenarioSimulations } from '../mock';
+import TransactionForm from './TransactionForm';
+import AlertsPanel from './AlertsPanel';
 
 const Dashboard = () => {
   const [transactions, setTransactions] = useState(mockTransactions);
   const [filteredTransactions, setFilteredTransactions] = useState(mockTransactions);
   const [alerts] = useState(mockAlerts);
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, type: 'ai', message: 'Hello! I\'m your GPP AI assistant. Ask me about payment transactions, compliance rules, or system processes.' }
+    { id: 1, type: 'ai', message: 'Hello! I\'m your GPP AI assistant. Ask me about payment transactions, compliance rules, or system processes. I can also explain transaction failures and processing flows.' }
   ]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [filters, setFilters] = useState({
@@ -36,6 +40,7 @@ const Dashboard = () => {
   });
   const [selectedScenario, setSelectedScenario] = useState('imps');
   const [scenarioType, setScenarioType] = useState('success');
+  const [activeTab, setActiveTab] = useState('transactions');
 
   // Filter transactions based on current filters
   useEffect(() => {
@@ -57,8 +62,53 @@ const Dashboard = () => {
       filtered = filtered.filter(txn => txn.amount <= parseInt(filters.amountMax));
     }
     
-    setFilteredTransactions(filtered);
+    setFilteredTransactions(filtered.sort((a, b) => new Date(b.date) - new Date(a.date)));
   }, [filters, transactions]);
+
+  const handleTransactionCreate = (newTransaction) => {
+    if (newTransaction.updateOnly) {
+      // Update existing transaction status
+      setTransactions(prev => prev.map(txn => 
+        txn.id === newTransaction.id 
+          ? { ...txn, status: newTransaction.status }
+          : txn
+      ));
+    } else {
+      // Add new transaction
+      setTransactions(prev => [newTransaction, ...prev]);
+    }
+  };
+
+  const handleAIMessage = (type, reason, txnData) => {
+    let response;
+    
+    switch (type) {
+      case 'transaction_created':
+        response = mockAIResponses.transaction_created(txnData);
+        break;
+      case 'transaction_failed':
+        response = mockAIResponses.transaction_failed(reason, txnData);
+        break;
+      case 'transaction_success':
+        response = {
+          response: `✅ **Transaction Completed Successfully**\n\nTransaction ${txnData.id} has been processed and settled successfully. Funds have been credited to the beneficiary account.`,
+          suggestions: ["View transaction details", "Download receipt", "Track similar transactions"]
+        };
+        break;
+      default:
+        return;
+    }
+
+    const newAIMessage = {
+      id: chatMessages.length + 1,
+      type: 'ai',
+      message: response.response,
+      suggestions: response.suggestions,
+      transactionId: txnData.id
+    };
+
+    setChatMessages(prev => [...prev, newAIMessage]);
+  };
 
   const getStatusIcon = (status) => {
     switch (status.toLowerCase()) {
@@ -75,16 +125,6 @@ const Dashboard = () => {
       case 'failed': return 'bg-red-500/10 text-red-400 border-red-500/20';
       case 'pending': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
       default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-    }
-  };
-
-  const getAlertIcon = (type) => {
-    switch (type) {
-      case 'failure': return <XCircle className="h-4 w-4 text-red-400" />;
-      case 'high_value': return <DollarSign className="h-4 w-4 text-amber-400" />;
-      case 'aml': return <Shield className="h-4 w-4 text-purple-400" />;
-      case 'cross_border': return <Activity className="h-4 w-4 text-blue-400" />;
-      default: return <AlertTriangle className="h-4 w-4 text-amber-400" />;
     }
   };
 
@@ -154,7 +194,7 @@ const Dashboard = () => {
       <div className="border-b border-gray-800 bg-gray-900/50">
         <div className="container mx-auto px-6 py-4">
           <h1 className="text-2xl font-bold text-teal-400">PayInsight</h1>
-          <p className="text-gray-400 mt-1">Smart Payment Intelligence Dashboard</p>
+          <p className="text-gray-400 mt-1">Smart Payment Intelligence Dashboard - Enterprise Simulation Platform</p>
         </div>
       </div>
 
@@ -205,10 +245,17 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            <Tabs defaultValue="transactions" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="bg-gray-900 border-gray-800 mb-6">
                 <TabsTrigger value="transactions" className="data-[state=active]:bg-teal-600">
                   Recent Transactions
+                </TabsTrigger>
+                <TabsTrigger value="create" className="data-[state=active]:bg-teal-600">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Transaction
+                </TabsTrigger>
+                <TabsTrigger value="alerts" className="data-[state=active]:bg-teal-600">
+                  System Alerts
                 </TabsTrigger>
                 <TabsTrigger value="simulator" className="data-[state=active]:bg-teal-600">
                   Scenario Simulator
@@ -218,9 +265,20 @@ const Dashboard = () => {
               <TabsContent value="transactions">
                 {/* Filters */}
                 <Card className="bg-gray-900 border-gray-800 p-6 mb-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Filter className="h-4 w-4 text-teal-400" />
-                    <h3 className="font-semibold text-white">Filters</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-teal-400" />
+                      <h3 className="font-semibold text-white">Filters</h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFilters({ status: 'all', channel: 'all', amountMin: '', amountMax: '' })}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Reset
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
@@ -326,8 +384,28 @@ const Dashboard = () => {
                         ))}
                       </tbody>
                     </table>
+                    {filteredTransactions.length === 0 && (
+                      <div className="text-center py-8 text-gray-400">
+                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p>No transactions match the current filters</p>
+                      </div>
+                    )}
                   </div>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="create">
+                <TransactionForm 
+                  onTransactionCreate={handleTransactionCreate}
+                  onAIMessage={handleAIMessage}
+                />
+              </TabsContent>
+
+              <TabsContent value="alerts">
+                <AlertsPanel 
+                  transactions={transactions} 
+                  alerts={alerts}
+                />
               </TabsContent>
 
               <TabsContent value="simulator">
@@ -373,37 +451,15 @@ const Dashboard = () => {
             </Tabs>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar - AI Chat */}
           <div className="space-y-8">
-            {/* Alerts */}
-            <Card className="bg-gray-900 border-gray-800 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <AlertTriangle className="h-5 w-5 text-amber-400" />
-                <h3 className="font-semibold text-white">System Alerts</h3>
-              </div>
-              <div className="space-y-4">
-                {alerts.map((alert) => (
-                  <div key={alert.id} className="border border-gray-800 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      {getAlertIcon(alert.type)}
-                      <div className="flex-1">
-                        <h4 className="font-medium text-white text-sm">{alert.title}</h4>
-                        <p className="text-gray-400 text-xs mt-1">{alert.description}</p>
-                        <p className="text-gray-500 text-xs mt-2">
-                          {new Date(alert.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            {/* AI Chat */}
             <Card className="bg-gray-900 border-gray-800 p-6">
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="h-5 w-5 text-teal-400" />
-                <h3 className="font-semibold text-white">AI Assistant</h3>
+                <h3 className="font-semibold text-white">GPP AI Assistant</h3>
+                <Badge className="bg-teal-500/10 text-teal-400 border-teal-500/30 text-xs">
+                  Live
+                </Badge>
               </div>
               
               <div className="h-80 overflow-y-auto mb-4 space-y-3 border border-gray-800 rounded-lg p-4">
@@ -427,6 +483,11 @@ const Dashboard = () => {
                           ))}
                         </div>
                       )}
+                      {msg.transactionId && (
+                        <div className="mt-2 text-xs text-teal-300 font-mono">
+                          Ref: {msg.transactionId}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -434,7 +495,7 @@ const Dashboard = () => {
 
               <div className="flex gap-2">
                 <Input
-                  placeholder="Ask about payments, compliance, or technical issues..."
+                  placeholder="Ask about payments, compliance, failures, or processing flows..."
                   value={currentMessage}
                   onChange={(e) => setCurrentMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
@@ -446,6 +507,10 @@ const Dashboard = () => {
                 >
                   <Send className="h-4 w-4" />
                 </Button>
+              </div>
+
+              <div className="mt-3 text-xs text-gray-400">
+                💡 Try asking: "Why did transaction TXN123 fail?" or "Explain NEFT processing flow"
               </div>
             </Card>
           </div>
