@@ -5,9 +5,11 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { validateIFSC, generateTransactionId, blockedAccounts } from '../mock';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
-const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
+const TransactionForm = ({ onTransactionCreate }) => {
+  const { API } = useAuth();
   const [formData, setFormData] = useState({
     sender: '',
     receiver: '',
@@ -19,136 +21,68 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
     if (!formData.sender || !formData.receiver || !formData.amount || !formData.channel || !formData.ifsc) {
-      alert('Please fill all required fields');
+      setError('Please fill all required fields');
       return;
     }
 
     setIsProcessing(true);
-    setProcessingStatus('Validating transaction...');
+    setProcessingStatus('Creating transaction...');
 
-    const amount = parseFloat(formData.amount);
-    const transactionId = generateTransactionId();
-    
-    // Simulate validation delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Validation logic
-    let status = 'Pending';
-    let failureReason = null;
-    let amlFlag = false;
-    let highValue = amount >= 200000;
-
-    // 1. IFSC validation
-    if (!validateIFSC(formData.ifsc)) {
-      status = 'Failed';
-      failureReason = 'Invalid IFSC code';
-    }
-    // 2. Blocked account check
-    else if (blockedAccounts.includes(formData.sender.toUpperCase()) || 
-             blockedAccounts.includes(formData.receiver.toUpperCase())) {
-      status = 'Failed';
-      failureReason = 'Account blocked';
-    }
-    // 3. AML check for high amounts
-    else if (amount >= 100000) {
-      amlFlag = true;
-      if (amount >= 1000000) {
-        status = 'Failed';
-        failureReason = 'AML compliance hold';
-      }
-    }
-    // 4. Channel-specific limits
-    else if (formData.channel === 'IMPS' && amount > 500000) {
-      status = 'Failed';
-      failureReason = 'Transaction limit exceeded';
-    }
-    else if (formData.channel === 'RTGS' && amount < 200000) {
-      status = 'Failed';
-      failureReason = 'Amount below RTGS minimum limit';
-    }
-    // 5. Random failure simulation (10% chance)
-    else if (Math.random() < 0.1) {
-      status = 'Failed';
-      failureReason = 'Insufficient funds';
-    }
-
-    const newTransaction = {
-      id: transactionId,
-      sender: formData.sender,
-      receiver: formData.receiver,
-      amount: amount,
-      channel: formData.channel,
-      status: status,
-      date: new Date().toISOString(),
-      ifsc: formData.ifsc,
-      failureReason: failureReason,
-      amlFlag: amlFlag,
-      highValue: highValue,
-      purpose: formData.purpose
-    };
-
-    setProcessingStatus(`Transaction ${status.toLowerCase()}...`);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Add transaction to list
-    onTransactionCreate(newTransaction);
-
-    // Send AI message about transaction
-    if (status === 'Failed') {
-      onAIMessage('transaction_failed', failureReason, newTransaction);
-    } else {
-      onAIMessage('transaction_created', null, newTransaction);
-    }
-
-    // If successful, simulate status updates
-    if (status !== 'Failed') {
-      simulateStatusUpdates(transactionId);
-    }
-
-    setIsProcessing(false);
-    setProcessingStatus('');
-    
-    // Reset form
-    setFormData({
-      sender: '',
-      receiver: '',
-      amount: '',
-      channel: '',
-      ifsc: '',
-      purpose: ''
-    });
-  };
-
-  const simulateStatusUpdates = (transactionId) => {
-    // Simulate real-time status updates
-    const updateStatus = (newStatus) => {
-      onTransactionCreate({
-        id: transactionId,
-        status: newStatus,
-        updateOnly: true
+    try {
+      const response = await axios.post(`${API}/transactions`, {
+        sender: formData.sender,
+        receiver: formData.receiver,
+        amount: parseFloat(formData.amount),
+        channel: formData.channel,
+        ifsc: formData.ifsc.toUpperCase(),
+        purpose: formData.purpose || null
       });
-    };
 
-    // Random success/failure after processing
-    setTimeout(() => {
-      const isSuccessful = Math.random() > 0.2; // 80% success rate
-      if (isSuccessful) {
-        updateStatus('Success');
-        onAIMessage('transaction_success', null, { id: transactionId });
+      if (response.data.success) {
+        setProcessingStatus('Transaction created successfully!');
+        
+        // Call the callback to refresh the transactions list
+        if (onTransactionCreate) {
+          onTransactionCreate(response.data.transaction);
+        }
+
+        // Reset form after successful creation
+        setTimeout(() => {
+          setFormData({
+            sender: '',
+            receiver: '',
+            amount: '',
+            channel: '',
+            ifsc: '',
+            purpose: ''
+          });
+          setProcessingStatus('');
+        }, 2000);
+
       } else {
-        updateStatus('Failed');
-        onAIMessage('transaction_failed', 'Network timeout', { id: transactionId });
+        setError(response.data.message || 'Failed to create transaction');
+        setProcessingStatus('');
       }
-    }, Math.random() * 10000 + 5000); // 5-15 seconds
+
+    } catch (error) {
+      console.error('Transaction creation error:', error);
+      setError(error.response?.data?.detail || 'Failed to create transaction');
+      setProcessingStatus('');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError('');
   };
 
   const getChannelInfo = (channel) => {
@@ -161,17 +95,26 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
   };
 
   return (
-    <Card className="bg-gray-900 border-gray-800 p-6">
-      <h3 className="font-semibold text-white mb-6 flex items-center gap-2">
-        <CheckCircle className="h-5 w-5 text-teal-400" />
+    <Card className="bg-white border-gray-200 p-6 shadow-sm">
+      <h3 className="font-semibold text-gray-900 mb-6 flex items-center gap-2">
+        <CheckCircle className="h-5 w-5 text-blue-600" />
         Create New Payment Transaction
       </h3>
 
       {isProcessing && (
-        <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-blue-400 animate-spin" />
-            <span className="text-blue-400 text-sm">{processingStatus}</span>
+            <Clock className="h-4 w-4 text-blue-600 animate-spin" />
+            <span className="text-blue-700 text-sm">{processingStatus}</span>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <span className="text-red-700 text-sm">{error}</span>
           </div>
         </div>
       )}
@@ -179,23 +122,23 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-gray-300 mb-2 block">Sender Account *</Label>
+            <Label className="text-gray-700 mb-2 block">Sender Account *</Label>
             <Input
               value={formData.sender}
               onChange={(e) => handleInputChange('sender', e.target.value)}
               placeholder="Enter sender name/account"
-              className="bg-gray-800 border-gray-700"
+              className="bg-white border-gray-300"
               disabled={isProcessing}
             />
           </div>
 
           <div>
-            <Label className="text-gray-300 mb-2 block">Receiver Account *</Label>
+            <Label className="text-gray-700 mb-2 block">Receiver Account *</Label>
             <Input
               value={formData.receiver}
               onChange={(e) => handleInputChange('receiver', e.target.value)}
               placeholder="Enter receiver name/account"
-              className="bg-gray-800 border-gray-700"
+              className="bg-white border-gray-300"
               disabled={isProcessing}
             />
           </div>
@@ -203,25 +146,25 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label className="text-gray-300 mb-2 block">Amount (₹) *</Label>
+            <Label className="text-gray-700 mb-2 block">Amount (₹) *</Label>
             <Input
               type="number"
               value={formData.amount}
               onChange={(e) => handleInputChange('amount', e.target.value)}
               placeholder="Enter amount"
-              className="bg-gray-800 border-gray-700"
+              className="bg-white border-gray-300"
               min="1"
               disabled={isProcessing}
             />
           </div>
 
           <div>
-            <Label className="text-gray-300 mb-2 block">IFSC Code *</Label>
+            <Label className="text-gray-700 mb-2 block">IFSC Code *</Label>
             <Input
               value={formData.ifsc}
               onChange={(e) => handleInputChange('ifsc', e.target.value.toUpperCase())}
               placeholder="e.g., HDFC0000123"
-              className="bg-gray-800 border-gray-700"
+              className="bg-white border-gray-300"
               maxLength="11"
               disabled={isProcessing}
             />
@@ -229,43 +172,43 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
         </div>
 
         <div>
-          <Label className="text-gray-300 mb-2 block">Payment Channel *</Label>
+          <Label className="text-gray-700 mb-2 block">Payment Channel *</Label>
           <Select 
             value={formData.channel} 
             onValueChange={(value) => handleInputChange('channel', value)}
             disabled={isProcessing}
           >
-            <SelectTrigger className="bg-gray-800 border-gray-700">
+            <SelectTrigger className="bg-white border-gray-300">
               <SelectValue placeholder="Select payment channel" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
+            <SelectContent className="bg-white border-gray-300">
               <SelectItem value="IMPS">IMPS - Immediate Payment</SelectItem>
               <SelectItem value="NEFT">NEFT - Electronic Funds Transfer</SelectItem>
               <SelectItem value="RTGS">RTGS - Real Time Gross Settlement</SelectItem>
             </SelectContent>
           </Select>
           {formData.channel && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               {getChannelInfo(formData.channel)}
             </p>
           )}
         </div>
 
         <div>
-          <Label className="text-gray-300 mb-2 block">Purpose (Optional)</Label>
+          <Label className="text-gray-700 mb-2 block">Purpose (Optional)</Label>
           <Input
             value={formData.purpose}
             onChange={(e) => handleInputChange('purpose', e.target.value)}
             placeholder="Payment purpose/description"
-            className="bg-gray-800 border-gray-700"
+            className="bg-white border-gray-300"
             disabled={isProcessing}
           />
         </div>
 
-        <div className="pt-4 border-t border-gray-800">
+        <div className="pt-4 border-t border-gray-200">
           <Button 
             type="submit" 
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
             disabled={isProcessing}
           >
             {isProcessing ? (
@@ -279,17 +222,17 @@ const TransactionForm = ({ onTransactionCreate, onAIMessage }) => {
           </Button>
         </div>
 
-        <div className="bg-gray-800/50 rounded-lg p-4 mt-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-gray-400">
-              <p className="font-medium text-amber-400 mb-1">Validation Rules:</p>
+            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-amber-800">
+              <p className="font-medium text-amber-700 mb-1">Validation Rules:</p>
               <ul className="space-y-1">
-                <li>• IFSC must be valid 11-character format</li>
-                <li>• Amounts ≥₹1L trigger AML checks</li>
+                <li>• IFSC must be valid 11-character format (e.g., ABCD0123456)</li>
+                <li>• Amounts ≥₹1L trigger AML compliance checks</li>
                 <li>• RTGS minimum: ₹2L, IMPS maximum: ₹5L</li>
-                <li>• Blocked accounts will be rejected</li>
-                <li>• Random network failures may occur (~10%)</li>
+                <li>• Blocked accounts will be automatically rejected</li>
+                <li>• Random network failures may occur (~5% chance)</li>
               </ul>
             </div>
           </div>

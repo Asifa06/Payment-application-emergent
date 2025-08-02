@@ -14,10 +14,22 @@ import {
   EyeOff
 } from 'lucide-react';
 
-const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
+const AlertsPanel = ({ transactions }) => {
   const [dynamicAlerts, setDynamicAlerts] = useState([]);
   const [showResolved, setShowResolved] = useState(false);
   const [resolvedAlerts, setResolvedAlerts] = useState(new Set());
+
+  // Static alerts for demo
+  const staticAlerts = [
+    {
+      id: "STATIC_001",
+      type: "aml",
+      title: "AML Compliance Review",
+      description: "High-value transaction pattern detected requiring manual review",
+      severity: "high",
+      timestamp: new Date().toISOString(),
+    }
+  ];
 
   useEffect(() => {
     // Generate dynamic alerts based on transaction patterns
@@ -26,6 +38,8 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
   }, [transactions]);
 
   const generateDynamicAlerts = (transactions) => {
+    if (!transactions || transactions.length === 0) return [];
+    
     const alerts = [];
     const now = new Date();
     
@@ -54,7 +68,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
     }
 
     // 2. Suspicious amount patterns
-    const amounts = transactions.map(txn => txn.amount);
+    const amounts = transactions.map(txn => txn.amount).filter(amt => amt);
     const justBelowThreshold = amounts.filter(amt => amt >= 90000 && amt < 100000).length;
     
     if (justBelowThreshold >= 3) {
@@ -73,7 +87,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
     }
 
     // 3. High-value transaction surge
-    const highValueCount = transactions.filter(txn => txn.amount >= 500000).length;
+    const highValueCount = transactions.filter(txn => txn.amount && txn.amount >= 500000).length;
     const totalTransactions = transactions.length;
     
     if (highValueCount / totalTransactions > 0.4 && totalTransactions >= 5) {
@@ -125,13 +139,13 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
     });
 
     // 5. AML flag concentration
-    const amlFlagged = transactions.filter(txn => txn.amlFlag).length;
+    const amlFlagged = transactions.filter(txn => txn.aml_flag).length;
     if (amlFlagged >= 3) {
       alerts.push({
         id: `DYN_${Date.now()}_AML_CONCENTRATION`,
         type: 'aml_pattern',
         title: 'AML Flag Concentration',
-        description: `${amlFlagged} transactions flagged for AML review. Consider enhanced monitoring.`,
+        description: `${amlFlagged} transactions flagged for AML review. Enhanced monitoring recommended.`,
         severity: 'medium',
         timestamp: now.toISOString(),
         metrics: {
@@ -172,18 +186,18 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
   };
 
   const getAlertColor = (severity, type) => {
-    if (severity === 'high') return 'text-red-400';
-    if (type === 'aml' || type === 'aml_pattern') return 'text-purple-400';
-    if (type === 'high_value' || type === 'high_value_surge') return 'text-amber-400';
-    if (type === 'channel_degradation') return 'text-blue-400';
-    return 'text-amber-400';
+    if (severity === 'high') return 'text-red-600';
+    if (type === 'aml' || type === 'aml_pattern') return 'text-purple-600';
+    if (type === 'high_value' || type === 'high_value_surge') return 'text-amber-600';
+    if (type === 'channel_degradation') return 'text-blue-600';
+    return 'text-amber-600';
   };
 
   const getSeverityBadge = (severity) => {
     const colors = {
-      'high': 'bg-red-500/10 text-red-400 border-red-500/30',
-      'medium': 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-      'low': 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+      'high': 'bg-red-50 text-red-700 border-red-200',
+      'medium': 'bg-amber-50 text-amber-700 border-amber-200',
+      'low': 'bg-blue-50 text-blue-700 border-blue-200'
     };
     
     return (
@@ -209,12 +223,12 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
   const unresolvedCount = allAlerts.filter(alert => !resolvedAlerts.has(alert.id)).length;
 
   return (
-    <Card className="bg-gray-900 border-gray-800 p-6">
+    <Card className="bg-white border-gray-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="h-5 w-5 text-amber-400" />
-          <h3 className="font-semibold text-white">System Alerts</h3>
-          <Badge className="bg-red-500/10 text-red-400 border-red-500/30 text-xs">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <h3 className="font-semibold text-gray-900">System Alerts</h3>
+          <Badge className="bg-red-50 text-red-700 border-red-200 text-xs">
             {unresolvedCount} Active
           </Badge>
         </div>
@@ -223,7 +237,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
           variant="ghost"
           size="sm"
           onClick={() => setShowResolved(!showResolved)}
-          className="text-gray-400 hover:text-white"
+          className="text-gray-600 hover:text-gray-900"
         >
           {showResolved ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           <span className="ml-2 text-xs">
@@ -234,7 +248,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
 
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {allAlerts.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
+          <div className="text-center py-8 text-gray-500">
             <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">No alerts at this time</p>
             <p className="text-xs opacity-75">System monitoring is active</p>
@@ -249,8 +263,8 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
                   key={alert.id} 
                   className={`border rounded-lg p-4 transition-all duration-200 ${
                     isResolved 
-                      ? 'border-gray-700 opacity-60 bg-gray-800/30' 
-                      : 'border-gray-700 hover:border-gray-600 bg-gray-800/50'
+                      ? 'border-gray-200 opacity-60 bg-gray-50' 
+                      : 'border-gray-200 hover:border-gray-300 bg-white shadow-sm'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -261,13 +275,13 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className={`font-medium text-sm ${isResolved ? 'text-gray-500 line-through' : 'text-white'}`}>
+                          <h4 className={`font-medium text-sm ${isResolved ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                             {alert.title}
                           </h4>
                           {getSeverityBadge(alert.severity)}
                         </div>
                         
-                        <p className={`text-xs ${isResolved ? 'text-gray-500' : 'text-gray-400'} mb-2`}>
+                        <p className={`text-xs ${isResolved ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
                           {alert.description}
                         </p>
                         
@@ -277,7 +291,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
                               <span 
                                 key={key} 
                                 className={`text-xs px-2 py-1 rounded ${
-                                  isResolved ? 'bg-gray-700 text-gray-500' : 'bg-gray-700 text-gray-300'
+                                  isResolved ? 'bg-gray-100 text-gray-500' : 'bg-gray-100 text-gray-700'
                                 }`}
                               >
                                 {key}: {typeof value === 'number' && value < 1 && value > 0 ? 
@@ -290,7 +304,7 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
                         )}
                         
                         <div className="flex items-center justify-between">
-                          <p className={`text-xs ${isResolved ? 'text-gray-600' : 'text-gray-500'}`}>
+                          <p className={`text-xs ${isResolved ? 'text-gray-400' : 'text-gray-500'}`}>
                             <Clock className="h-3 w-3 inline mr-1" />
                             {new Date(alert.timestamp).toLocaleString()}
                           </p>
@@ -300,8 +314,8 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
                             size="sm"
                             className={`text-xs h-6 px-2 ${
                               isResolved 
-                                ? 'text-green-400 hover:text-green-300' 
-                                : 'text-gray-400 hover:text-white'
+                                ? 'text-emerald-600 hover:text-emerald-700' 
+                                : 'text-gray-600 hover:text-gray-900'
                             }`}
                             onClick={() => isResolved ? unresolveAlert(alert.id) : resolveAlert(alert.id)}
                           >
@@ -318,9 +332,9 @@ const AlertsPanel = ({ transactions, alerts: staticAlerts }) => {
       </div>
 
       {dynamicAlerts.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-gray-800">
-          <p className="text-xs text-teal-400 mb-1">🤖 AI-Generated Insights</p>
-          <p className="text-xs text-gray-400">
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <p className="text-xs text-blue-600 mb-1">🤖 AI-Generated Insights</p>
+          <p className="text-xs text-gray-500">
             {dynamicAlerts.length} pattern-based alert{dynamicAlerts.length !== 1 ? 's' : ''} detected from transaction analysis
           </p>
         </div>
