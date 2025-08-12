@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/Asifa06/Payment-application-emergent/static/css/main.f2216c59.css",
+    "main.js": "/Asifa06/Payment-application-emergent/static/js/main.ae77c623.js",
+    "index.html": "/Asifa06/Payment-application-emergent/index.html",
+    "main.f2216c59.css.map": "/Asifa06/Payment-application-emergent/static/css/main.f2216c59.css.map",
+    "main.ae77c623.js.map": "/Asifa06/Payment-application-emergent/static/js/main.ae77c623.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f2216c59.css",
+    "static/js/main.ae77c623.js"
+  ]
+}
