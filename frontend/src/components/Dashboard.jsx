@@ -34,7 +34,7 @@ const Dashboard = () => {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chatMessages, setChatMessages] = useState([
-    { id: 1, type: 'ai', message: 'Hello! I\'m your GPP AI assistant. Ask me about payment transactions, compliance rules, or system processes. I can also explain transaction failures and processing flows.' }
+    { id: 1, type: 'ai', message: 'Hello! I\'m your Payment AI assistant. Ask me about payment transactions, compliance rules, or system processes. I can also explain transaction failures and processing flows.' }
   ]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [filters, setFilters] = useState({
@@ -490,7 +490,7 @@ const Dashboard = () => {
             <Card className="bg-white border-gray-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <MessageSquare className="h-5 w-5 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">GPP AI Assistant</h3>
+                <h3 className="font-semibold text-gray-900">Payment AI Assistant</h3>
                 <Badge className="bg-teal-50 text-teal-700 border-teal-200 text-xs">
                   Live
                 </Badge>
